@@ -1,0 +1,121 @@
+@echo off
+title Advanced System Specs Extractor - Abdullah
+mode con: cols=100 lines=50
+:: Color 4: Dark Red Text
+color 4
+
+:: Output file path
+set "output_file=%~dp0System_Specs.txt"
+
+echo ========================================================== > "%output_file%"
+echo                SYSTEM SPECIFICATIONS REPORT              >> "%output_file%"
+echo ========================================================== >> "%output_file%"
+echo Report Generated On: %date% at %time% >> "%output_file%"
+echo. >> "%output_file%"
+
+echo Extracting hardware information... Please wait.
+echo ----------------------------------------------------------
+
+:: 1. OS & Basic Info
+echo [1/8] Operating System Information...
+echo [OPERATING SYSTEM INFORMATION] >> "%output_file%"
+powershell -Command "Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Version, OSArchitecture | Format-List" >> "%output_file%"
+echo ---------------------------------------------------------- >> "%output_file%"
+
+:: 2. CPU Info
+echo [2/8] Processor (CPU) Information...
+echo [PROCESSOR / CPU] >> "%output_file%"
+powershell -Command "Get-CimInstance Win32_Processor | Select-Object Name, Manufacturer, @{Name='MaxClock(GHz)';Expression={[math]::round($_.MaxClockSpeed/1000, 2)}}, NumberOfCores, NumberOfLogicalProcessors | Format-List" >> "%output_file%"
+echo ---------------------------------------------------------- >> "%output_file%"
+
+:: 3. Memory (RAM) Info
+echo [3/8] Memory (RAM) Information...
+echo [MEMORY / RAM] >> "%output_file%"
+powershell -Command "$total = 0; Get-CimInstance Win32_PhysicalMemory | ForEach-Object { $total += $_.Capacity; $type = switch($_.SMBIOSMemoryType){20 {'DDR'} 21 {'DDR2'} 24 {'DDR3'} 26 {'DDR4'} 34 {'DDR5'} default {'Unknown'}}; [PSCustomObject]@{ 'Slot'=$_.DeviceLocator; 'Capacity(GB)'=[math]::round($_.Capacity/1GB, 2); 'Type'=$type; 'Speed(MHz)'=$_.Speed } } | Format-Table -AutoSize; echo 'Total System RAM: ' ([math]::round($total/1GB, 2)) 'GB'" >> "%output_file%"
+echo ---------------------------------------------------------- >> "%output_file%"
+
+:: 4. Storage Info
+echo [4/8] Storage (HDD/SSD) Information...
+echo [STORAGE / DISKS] >> "%output_file%"
+powershell -Command "Get-PhysicalDisk | Select-Object FriendlyName, @{Name='Size(GB)';Expression={[math]::round($_.Size/1GB,2)}}, MediaType | Format-Table -AutoSize" >> "%output_file%"
+powershell -Command "Get-CimInstance Win32_LogicalDisk -Filter 'DriveType=3' | ForEach-Object { [PSCustomObject]@{ 'Drive'=$_.DeviceID; 'Free(GB)'=[math]::round($_.FreeSpace/1GB, 2); 'Total(GB)'=[math]::round($_.Size/1GB, 2) } } | Format-Table -AutoSize" >> "%output_file%"
+echo ---------------------------------------------------------- >> "%output_file%"
+
+:: 5. GPU Info
+echo [5/8] Graphics (GPU) Information...
+echo [GRAPHICS / GPU] >> "%output_file%"
+powershell -Command "Get-CimInstance Win32_VideoController | Select-Object Name, DriverVersion, VideoModeDescription | Format-List" >> "%output_file%"
+echo ---------------------------------------------------------- >> "%output_file%"
+
+:: 6. Display Info
+echo [6/8] Screen Resolution Information...
+echo [DISPLAY / SCREEN RESOLUTION] >> "%output_file%"
+powershell -Command "Get-CimInstance Win32_VideoController | ForEach-Object { [PSCustomObject]@{ 'Adapter'=$_.Name; 'Resolution'=$('{0} x {1} @ {2}Hz' -f $_.CurrentHorizontalResolution, $_.CurrentVerticalResolution, $_.CurrentRefreshRate) } } | Format-Table -AutoSize" >> "%output_file%"
+echo ---------------------------------------------------------- >> "%output_file%"
+
+:: 7. Manual Input Section
+cls
+echo ==========================================================
+echo           MANUAL HARDWARE AND BUYER VERIFICATION
+echo ==========================================================
+echo Please answer the following questions carefully.
+echo.
+
+echo [MANUAL HARDWARE AND BUYER VERIFICATION] >> "%output_file%"
+
+set /p touch="1. Is the screen touch-enabled? (Yes/No): "
+echo Touch Screen: %touch% >> "%output_file%"
+
+set /p cam="2. Camera quality (e.g., 720p, 1080p): "
+echo Camera Quality: %cam% >> "%output_file%"
+
+set /p finger="3. Fingerprint sensor present? (Yes/No): "
+echo Fingerprint Sensor: %finger% >> "%output_file%"
+
+set /p battery="4. Expected battery backup (Hours): "
+echo Battery Backup: %battery% >> "%output_file%"
+
+set /p backlit="5. Backlit keyboard? (Yes/No): "
+echo Backlit Keyboard: %backlit% >> "%output_file%"
+
+set /p typec="6. Support Type-C charging? (Yes/No): "
+echo Type-C Charging: %typec% >> "%output_file%"
+
+set /p nits="7. Screen Brightness/Nits (if known): "
+echo Screen Brightness: %nits% >> "%output_file%"
+
+set /p build="8. Build Material (Plastic/Metal/Carbon): "
+echo Build Material: %build% >> "%output_file%"
+
+set /p slots="9. Empty RAM/SSD slots for upgrade? (Yes/No): "
+echo Expandability: %slots% >> "%output_file%"
+
+set /p warranty="10. Warranty Status (Local/International/None): "
+echo Warranty Type: %warranty% >> "%output_file%"
+
+echo. >> "%output_file%"
+echo ========================================================== >> "%output_file%"
+echo                    END OF REPORT                         >> "%output_file%"
+echo ========================================================== >> "%output_file%"
+
+:: 8. Publicity and Branding Section
+echo. >> "%output_file%"
+echo ---------------------------------------------------------- >> "%output_file%"
+echo REPORT PREPARED BY: Abdullah >> "%output_file%"
+echo COMPANY: Saefay Solutions >> "%output_file%"
+echo TAGLINE: Innovation through Automation >> "%output_file%"
+echo GITHUB: github.com/abieegit >> "%output_file%"
+echo ---------------------------------------------------------- >> "%output_file%"
+
+:: Final Output
+cls
+echo Processing final report...
+timeout /t 2 >nul
+type "%output_file%"
+
+echo.
+echo ----------------------------------------------------------
+echo SUCCESS: Report generated by Abdullah (Saefay Solutions).
+echo File saved to: "%output_file%"
+echo ----------------------------------------------------------
+pause
